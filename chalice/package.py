@@ -380,8 +380,9 @@ class AppPackager(object):
         return serialize_to_yaml(doc)
 
     def package_app(self, config, outdir, chalice_stage_name,
-                    template_filename='sam.json', fully_cooked=True):
-        # type: (Config, str, str) -> None
+                    template_filename='sam.json', fully_cooked=True,
+                    handler_name=None):
+        # type: (Config, str, str, str, bool, str) -> None
         # Deployment package
         resources = self._resource_builder.construct_resources(
             config, chalice_stage_name)
@@ -393,15 +394,15 @@ class AppPackager(object):
             self._osutils.makedirs(outdir)
         self._template_post_processor.process(
             sam_template, config, outdir, chalice_stage_name,
-            fully_cooked=fully_cooked)
+            fully_cooked=fully_cooked, handler_name=handler_name)
         if template_filename.endswith('.json'):
             content = self._to_json(sam_template)
         elif (template_filename.endswith('.yml') or
               template_filename.endswith('.yaml')):
             content = self._to_json(sam_template)
         else:
-            raise ValueError("Unsupported template file format (must end "
-                             "in one of {.json, .yml, .yaml}).")
+            raise ValueError("Unsupported template file type (must end "
+                             "in .json, .yml, or .yaml).")
         self._osutils.set_file_contents(
             filename=os.path.join(outdir, template_filename),
             contents=content,
@@ -415,12 +416,14 @@ class TemplatePostProcessor(object):
         self._osutils = osutils
 
     def process(self, template, config, outdir, chalice_stage_name,
-                fully_cooked=True):
-        # type: (Dict[str, Any], Config, str, str) -> None
-        self._fixup_deployment_package(template, outdir, fully_cooked)
+                fully_cooked=True, handler_name=None):
+        # type: (Dict[str, Any], Config, str, str, bool, str) -> None
+        self._fixup_deployment_package(config, template, outdir, fully_cooked,
+                                       handler_name)
 
-    def _fixup_deployment_package(self, template, outdir, fully_cooked):
-        # type: (Dict[str, Any], str) -> None
+    def _fixup_deployment_package(self, config, template, outdir, fully_cooked,
+                                  handler_name=None):
+        # type: (Config, Dict[str, Any], str, bool, str) -> None
         # NOTE: This isn't my ideal way to do this.  I'd like
         # to move this into the build step where something
         # copies the DeploymentPackage.filename over to the
@@ -439,4 +442,12 @@ class TemplatePostProcessor(object):
                     copied = True
                 resource['Properties']['CodeUri'] = './deployment.zip'
             else:
-                resource['Properties']['CodeUri'] = '.'
+                # noinspection PyUnresolvedReferences
+                project_dir = os.path.abspath(config.project_dir)
+                if not os.path.isabs(outdir):
+                    # make project_dir relative to template output directory
+                    out_dir = os.path.abspath(os.path.join(project_dir, outdir))
+                    project_dir = os.path.relpath(project_dir, out_dir)
+                resource['Properties']['CodeUri'] = project_dir
+            if handler_name:
+                resource['Properties']['Handler'] = handler_name
