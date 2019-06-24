@@ -398,14 +398,16 @@ def package(ctx, single_file, stage, out):
 @cli.command('generate-template')
 @click.option('--stage', default=DEFAULT_STAGE_NAME)
 @click.option('--template', default='template.yaml')
+@click.option('--handler', default='app.app')
+@click.option('--output-dir', default='../')
 @click.pass_context
-def generate_template(ctx, stage, template):
-    # type: (click.Context, str, str) -> None
+def generate_template(ctx, stage, template, handler, output_dir):
+    # type: (click.Context, str, str, str, str) -> None
     factory = ctx.obj['factory']  # type: CLIFactory
     config = factory.create_config_obj(stage)
     packager = factory.create_app_packager(config)
-    packager.package_app(config, '.', stage, template_filename=template,
-                         fully_cooked=False)
+    packager.package_app(config, output_dir, stage, template_filename=template,
+                         fully_cooked=False, handler_name=handler)
 
 
 @cli.command('generate-pipeline')
@@ -489,3 +491,7 @@ def main():
     except Exception:
         click.echo(traceback.format_exc(), err=True)
         return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
