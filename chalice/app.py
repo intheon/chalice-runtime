@@ -807,6 +807,8 @@ class Chalice(_HandlerRegistration, DecoratorAPI):
         # Sometimes the event can be something that's not
         # what we specified in our request_template mapping.
         # When that happens, we want to give a better error message here.
+        if 'multiValueQueryStringParameters' not in event:
+            event['multiValueQueryStringParameters'] = event['queryStringParameters']
         resource_path = event.get('requestContext', {}).get('resourcePath')
         if resource_path is None:
             return error_response(error_code='InternalServerError',
