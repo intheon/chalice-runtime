@@ -395,6 +395,19 @@ def package(ctx, single_file, stage, out):
         packager.package_app(config, out, stage)
 
 
+@cli.command('generate-template')
+@click.option('--stage', default=DEFAULT_STAGE_NAME)
+@click.option('--template', default='template.yaml')
+@click.pass_context
+def generate_template(ctx, stage, template):
+    # type: (click.Context, str, str) -> None
+    factory = ctx.obj['factory']  # type: CLIFactory
+    config = factory.create_config_obj(stage)
+    packager = factory.create_app_packager(config)
+    packager.package_app(config, '.', stage, template_filename=template,
+                         fully_cooked=False)
+
+
 @cli.command('generate-pipeline')
 @click.option('-i', '--codebuild-image',
               help=("Specify default codebuild image to use.  "

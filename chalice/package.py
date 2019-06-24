@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Set, Union  # noqa
 from typing import cast
 
 from chalice.deploy.swagger import CFNSwaggerGenerator
-from chalice.utils import OSUtils, UI, serialize_to_json, to_cfn_resource_name
+from chalice.utils import OSUtils, UI, to_cfn_resource_name
+from chalice.utils import serialize_to_json, serialize_to_yaml
 from chalice.config import Config  # noqa
 from chalice.deploy import models
 from chalice.deploy.deployer import ApplicationGraphBuilder
@@ -374,7 +375,12 @@ class AppPackager(object):
         # type: (Any) -> str
         return serialize_to_json(doc)
 
-    def package_app(self, config, outdir, chalice_stage_name):
+    def _to_yaml(self, doc):
+        # type: (Any) -> str
+        return serialize_to_yaml(doc)
+
+    def package_app(self, config, outdir, chalice_stage_name,
+                    template_filename='sam.json', fully_cooked=True):
         # type: (Config, str, str) -> None
         # Deployment package
         resources = self._resource_builder.construct_resources(
@@ -386,10 +392,19 @@ class AppPackager(object):
         if not self._osutils.directory_exists(outdir):
             self._osutils.makedirs(outdir)
         self._template_post_processor.process(
-            sam_template, config, outdir, chalice_stage_name)
+            sam_template, config, outdir, chalice_stage_name,
+            fully_cooked=fully_cooked)
+        if template_filename.endswith('.json'):
+            content = self._to_json(sam_template)
+        elif (template_filename.endswith('.yml') or
+              template_filename.endswith('.yaml')):
+            content = self._to_json(sam_template)
+        else:
+            raise ValueError("Unsupported template file format (must end "
+                             "in one of {.json, .yml, .yaml}).")
         self._osutils.set_file_contents(
-            filename=os.path.join(outdir, 'sam.json'),
-            contents=self._to_json(sam_template),
+            filename=os.path.join(outdir, template_filename),
+            contents=content,
             binary=False
         )
 
@@ -399,11 +414,12 @@ class TemplatePostProcessor(object):
         # type: (OSUtils) -> None
         self._osutils = osutils
 
-    def process(self, template, config, outdir, chalice_stage_name):
+    def process(self, template, config, outdir, chalice_stage_name,
+                fully_cooked=True):
         # type: (Dict[str, Any], Config, str, str) -> None
-        self._fixup_deployment_package(template, outdir)
+        self._fixup_deployment_package(template, outdir, fully_cooked)
 
-    def _fixup_deployment_package(self, template, outdir):
+    def _fixup_deployment_package(self, template, outdir, fully_cooked):
         # type: (Dict[str, Any], str) -> None
         # NOTE: This isn't my ideal way to do this.  I'd like
         # to move this into the build step where something
@@ -415,9 +431,12 @@ class TemplatePostProcessor(object):
         for resource in template['Resources'].values():
             if resource['Type'] != 'AWS::Serverless::Function':
                 continue
-            original_location = resource['Properties']['CodeUri']
-            new_location = os.path.join(outdir, 'deployment.zip')
-            if not copied:
-                self._osutils.copy(original_location, new_location)
-                copied = True
-            resource['Properties']['CodeUri'] = './deployment.zip'
+            if fully_cooked:
+                original_location = resource['Properties']['CodeUri']
+                new_location = os.path.join(outdir, 'deployment.zip')
+                if not copied:
+                    self._osutils.copy(original_location, new_location)
+                    copied = True
+                resource['Properties']['CodeUri'] = './deployment.zip'
+            else:
+                resource['Properties']['CodeUri'] = '.'

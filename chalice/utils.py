@@ -10,6 +10,7 @@ import sys
 import tarfile
 import subprocess
 
+import yaml
 import click
 from typing import IO, Dict, List, Any, Tuple, Iterator, BinaryIO  # noqa
 from typing import Optional, Union  # noqa
@@ -94,6 +95,12 @@ def serialize_to_json(data):
 
     """
     return json.dumps(data, indent=2, separators=(',', ': ')) + '\n'
+
+
+def serialize_to_yaml(data):
+    # type: (Any) -> str
+    """Serialize to YAML."""
+    return yaml.dump(data)
 
 
 def create_zip_file(source_dir, outfile):
