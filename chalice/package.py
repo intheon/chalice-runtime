@@ -400,7 +400,7 @@ class AppPackager(object):
             content = self._to_json(sam_template)
         elif (template_filename.endswith('.yml') or
               template_filename.endswith('.yaml')):
-            content = self._to_json(sam_template)
+            content = self._to_yaml(sam_template)
         else:
             raise ValueError("Unsupported template file type (must end "
                              "in .json, .yml, or .yaml).")
