@@ -403,6 +403,7 @@ def package(ctx, single_file, stage, out):
 @click.pass_context
 def generate_template(ctx, stage, template, handler, output_dir):
     # type: (click.Context, str, str, str, str) -> None
+    """Generate a SAM template for use with SAM CLI tools."""
     factory = ctx.obj['factory']  # type: CLIFactory
     config = factory.create_config_obj(stage)
     packager = factory.create_app_packager(config, fully_cooked=False)
