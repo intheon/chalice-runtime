@@ -2,6 +2,14 @@
 CHANGELOG
 =========
 
+1.9.0-sam
+=========
+
+* Added generate-template command that can create an
+  unpackaged SAM template.
+* CLI can now infer the project directory if the
+  project dir is a subdir of cwd.
+
 1.9.0
 =====
 
