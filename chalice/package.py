@@ -15,14 +15,15 @@ from chalice.deploy.deployer import BuildStage  # noqa
 from chalice.deploy.deployer import create_build_stage
 
 
-def create_app_packager(config):
-    # type: (Config) -> AppPackager
+def create_app_packager(config, fully_cooked=True):
+    # type: (Config, bool) -> AppPackager
     osutils = OSUtils()
     ui = UI()
     application_builder = ApplicationGraphBuilder()
     deps_builder = DependencyBuilder()
     build_stage = create_build_stage(
-        osutils, ui, CFNSwaggerGenerator()
+        osutils, ui, CFNSwaggerGenerator(),
+        fully_cooked=fully_cooked
     )
     resource_builder = ResourceBuilder(application_builder,
                                        deps_builder, build_stage)

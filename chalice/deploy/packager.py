@@ -53,6 +53,22 @@ class PackageDownloadError(Exception):
     """Generic networking error during a package download."""
 
 
+class NullDeploymentPackager(object):
+    def __init__(self,
+                 osutils=None,              # type: Optional[OSUtils]
+                 dependency_builder=None,   # type: Optional[DependencyBuilder]
+                 ui=None                    # type: Optional[UI]
+                 ):
+        # type: (...) -> None
+        pass
+
+    @staticmethod
+    def create_deployment_package(project_dir, python_version,
+                                  package_filename=None):
+        # type: (str, str, Optional[str]) -> str
+        return 'file-not-built-by-NullDeploymentPackager.zip'
+
+
 class LambdaDeploymentPackager(object):
     _CHALICE_LIB_DIR = 'chalicelib'
     _VENDOR_DIR = 'vendor'

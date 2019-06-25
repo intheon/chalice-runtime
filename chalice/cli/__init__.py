@@ -405,7 +405,7 @@ def generate_template(ctx, stage, template, handler, output_dir):
     # type: (click.Context, str, str, str, str) -> None
     factory = ctx.obj['factory']  # type: CLIFactory
     config = factory.create_config_obj(stage)
-    packager = factory.create_app_packager(config)
+    packager = factory.create_app_packager(config, fully_cooked=False)
     packager.package_app(config, output_dir, stage, template_filename=template,
                          fully_cooked=False, handler_name=handler)
 

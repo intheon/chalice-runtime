@@ -114,6 +114,7 @@ from chalice.deploy.packager import PipRunner
 from chalice.deploy.packager import SubprocessPip
 from chalice.deploy.packager import DependencyBuilder as PipDependencyBuilder
 from chalice.deploy.packager import LambdaDeploymentPackager
+from chalice.deploy.packager import NullDeploymentPackager
 from chalice.deploy.planner import PlanStage
 from chalice.deploy.planner import RemoteState
 from chalice.deploy.planner import ResourceSweeper
@@ -268,8 +269,8 @@ def create_default_deployer(session, config, ui):
     )
 
 
-def create_build_stage(osutils, ui, swagger_gen):
-    # type: (OSUtils, UI, SwaggerGenerator) -> BuildStage
+def create_build_stage(osutils, ui, swagger_gen, fully_cooked=True):
+    # type: (OSUtils, UI, SwaggerGenerator, bool) -> BuildStage
     pip_runner = PipRunner(pip=SubprocessPip(osutils=osutils),
                            osutils=osutils)
     dependency_builder = PipDependencyBuilder(
@@ -284,7 +285,7 @@ def create_build_stage(osutils, ui, swagger_gen):
                     osutils=osutils,
                     dependency_builder=dependency_builder,
                     ui=ui,
-                ),
+                ) if fully_cooked else NullDeploymentPackager(),
             ),
             PolicyGenerator(
                 policy_gen=AppPolicyGenerator(
