@@ -91,8 +91,8 @@ def get_system_info():
                       message='%(prog)s %(version)s, {}'
                       .format(get_system_info()))
 @click.option('--project-dir',
-              help='The project directory path (absolute or relative).'
-                   'Defaults to CWD')
+              help='The project directory path (absolute or relative). '
+                   'Defaults to CWD or the contained project, if applicable.')
 @click.option('--debug/--no-debug',
               default=False,
               help='Print debug logs to stderr.')
@@ -101,6 +101,17 @@ def cli(ctx, project_dir, debug=False):
     # type: (click.Context, str, bool) -> None
     if project_dir is None:
         project_dir = os.getcwd()
+        if not os.path.exists(os.path.join(project_dir, '.chalice')):
+            if ctx.invoked_subcommand != 'new-project':
+                candidates = [d for d in next(os.walk(project_dir))[1]
+                              if os.path.exists(os.path.join(d, '.chalice'))]
+                if len(candidates) > 1:
+                    raise RuntimeError("There are multiple chalice projects "
+                                       "below the current working directory, "
+                                       "please use the --project-dir "
+                                       "argument to select: %s" % candidates)
+                elif candidates:
+                    project_dir = os.path.abspath(candidates[0])
     elif not os.path.isabs(project_dir):
         project_dir = os.path.abspath(project_dir)
     if debug is True:
