@@ -809,7 +809,7 @@ class Chalice(_HandlerRegistration, DecoratorAPI):
         # When that happens, we want to give a better error message here.
         if 'multiValueQueryStringParameters' not in event:
             if event['queryStringParameters'] is not None:
-                tmp = {k: list(v) for k, v in event['queryStringParameters'].items()}
+                tmp = {k: [v] for k, v in event['queryStringParameters'].items()}
             else:
                 tmp = None
             event['multiValueQueryStringParameters'] = tmp
